@@ -1,1 +1,6 @@
 venv/
+.env
+.DS_Store
+
+
+playright/.auth

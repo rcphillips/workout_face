@@ -2,18 +2,27 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import base64
 import time
-load_dotenv()
+import os
+import requests
 
 from playwright.sync_api import sync_playwright
 from PIL import Image
 from io import BytesIO
 
+#API link
+load_dotenv()
+api_key = os.getenv('API_KEY')
+garmin_pass = os.getenv('GARMIN_PASSWORD')
+site_url = "https://www.google.com"
+
+username = 'rcphillips88@gmail.com'
 # Input messages
 input_messages = [
     {
         "role": "user",
-        #"content": "Open Google and search for images of a cat. Then click on the first image that you found. Download the image."
-        "content": "Open garmin workouts, enter rcphillips88@gmail.com for the email address and XXXXXX for the password. Then click sign in. Then, click on the select workout type button, select run, select create workout. Create a 3 mile run entited 'roborun'"
+        "content": "Open Google and search for images of a cat. Then click on the first image that you found. Download the image."
+        #"content": "Go to garmin and log in with name rcphillips88@gmail.com and password"
+        #"content": "search for Mario games."
     }
 ]
 
@@ -26,7 +35,7 @@ tools = [{
 }]
 
 # OpenAI client
-client = OpenAI()
+client = OpenAI(api_key=api_key)
 
 def show_image(base_64_image):
     image_data = base64.b64decode(base_64_image)
@@ -35,9 +44,6 @@ def show_image(base_64_image):
 
 def get_screenshot(page):
     return page.screenshot()
-
-
-
 
 def handle_model_action(browser, page, action):
     action_type = action.type
@@ -65,7 +71,7 @@ def handle_model_action(browser, page, action):
                 print(f"Action: type text: {text}")
                 page.keyboard.type(text)
             case "wait":
-                print(f"ACtion: wait")
+                print(f"Action: wait")
                 time.sleep(2)
             case "keypress":
                 keys = action.keys
@@ -126,8 +132,6 @@ def computer_use_loop(browser, page, response):
 
         print(response.output)
         
-
-
         final_response = computer_use_loop(browser, page, response)
         print("final response: ", final_response.output)
         browser.close()
@@ -135,7 +139,7 @@ def computer_use_loop(browser, page, response):
 def main():
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(
+        browser = p.firefox.launch(
             headless=False,
             chromium_sandbox=True,
             env={},
@@ -146,14 +150,17 @@ def main():
         )
 
         page = browser.new_page()
-        page.set_viewport_size({"width": 1024, "height": 768})
+        page.set_viewport_size({"width": 512, "height": 364})
 
         # Navigate to the initial URL
-        page.goto("https://connect.garmin.com/modern/workouts", wait_until="domcontentloaded")
+        page.goto("https://www.google.com")
+        #page.goto("https://sandbox.oxylabs.io/products")
+        #page.goto("https://connect.garmin.com/signin")
 
-        
-
-
+        # Interact with login form
+        #page.get_by_label("Username or email address").fill("username")
+        #page.get_by_label("Password").fill("garmin_password")
+        #page.get_by_role("button", name="Sign in").click()
 
         # Create initial response
         response = client.responses.create(
